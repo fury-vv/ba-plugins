@@ -1,0 +1,73 @@
+# Danh sách thuật ngữ đặc thù lĩnh vực không được xuất hiện trong core skill
+# (SKILL.md và references/). Dùng bởi tests/scan_domain_terms.py.
+#
+# Mỗi dòng là một thuật ngữ (khớp theo ranh giới từ, không phân biệt hoa thường).
+# Dòng bắt đầu bằng "!" là cụm từ được phép: cụm này được xóa khỏi dòng trước khi
+# quét, kèm lý do sau dấu "|".
+#
+# Quét chỉ là công cụ hỗ trợ; kết quả cần người xem lại.
+
+# Thực thể mặc định bị cấm theo prompt gốc
+lead
+client
+case
+contract
+payment
+patient
+student
+order
+matter
+invoice
+
+# Tên lĩnh vực và thực thể đặc thù thường gặp (tiếng Anh)
+hospital
+school
+bank
+banking
+insurance
+loan
+e-commerce
+ecommerce
+checkout
+cart
+diagnosis
+lawsuit
+attorney
+tuition
+
+# Tiếng Việt
+bệnh nhân
+bệnh viện
+học sinh
+sinh viên
+trường học
+đơn hàng
+hóa đơn
+thanh toán
+giỏ hàng
+hợp đồng
+vụ việc
+vụ án
+luật sư
+khách hàng tiềm năng
+ngân hàng
+bảo hiểm
+khoản vay
+
+# Lĩnh vực của ví dụ giả lập: không được rò rỉ vào core
+volunteer
+shift
+tình nguyện
+ca làm việc
+nhà tài trợ
+
+# Cụm từ được phép
+!use case|thuật ngữ phân tích yêu cầu, không phải thực thể nghiệp vụ
+!test case|thuật ngữ kiểm thử
+!hợp đồng hoặc phụ lục kỹ thuật|hợp đồng giữa khách hàng và đơn vị triển khai, nguồn yêu cầu
+!điều khoản hợp đồng|như trên
+!hợp đồng, chính sách|nguồn của yêu cầu bắt buộc, không phải thực thể
+!hợp đồng, chính sách nội bộ|như trên
+!từ hợp đồng|như trên
+!khách hàng, hợp đồng|như trên
+!ngân hàng câu hỏi|nghĩa là question bank, không phải lĩnh vực ngân hàng

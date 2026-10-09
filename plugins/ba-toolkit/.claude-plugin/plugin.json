@@ -1,0 +1,17 @@
+{
+  "name": "ba-toolkit",
+  "displayName": "BA Toolkit",
+  "version": "1.0.0",
+  "description": "Bộ skill hỗ trợ Business Analyst. v1.0.0 gồm skill srs-analysis: thu thập yêu cầu domain-neutral, soạn SRS có ID ổn định, acceptance criteria, sơ đồ Mermaid, traceability, validator và cổng phê duyệt của con người.",
+  "author": {
+    "name": "tantd",
+    "email": "tantd@samset.net"
+  },
+  "keywords": [
+    "business-analysis",
+    "requirements",
+    "srs",
+    "elicitation",
+    "traceability"
+  ]
+}

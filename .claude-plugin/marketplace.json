@@ -1,0 +1,15 @@
+{
+  "name": "ba-plugins",
+  "description": "Plugin nội bộ hỗ trợ Business Analyst",
+  "owner": {
+    "name": "tantd",
+    "email": "tantd@samset.net"
+  },
+  "plugins": [
+    {
+      "name": "ba-toolkit",
+      "source": "./plugins/ba-toolkit",
+      "description": "Skill srs-analysis: thu thập yêu cầu domain-neutral và soạn SRS có cổng phê duyệt"
+    }
+  ]
+}
