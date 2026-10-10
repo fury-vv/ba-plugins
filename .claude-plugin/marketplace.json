@@ -9,7 +9,7 @@
     {
       "name": "ba-toolkit",
       "source": "./plugins/ba-toolkit",
-      "description": "Skill srs-analysis: thu thập yêu cầu domain-neutral và soạn SRS có cổng phê duyệt"
+      "description": "Skill srs-analysis: thu thập yêu cầu domain-neutral và soạn BRD/SRS/Diagrams có cổng phê duyệt"
     }
   ]
 }

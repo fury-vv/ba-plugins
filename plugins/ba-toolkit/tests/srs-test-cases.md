@@ -1,7 +1,7 @@
-# Bộ ca kiểm thử — skill `srs-analysis` v1.0.0
+# Bộ ca kiểm thử — skill `srs-analysis` v2.0.0
 
 **Mục đích:** kiểm tra hành vi của skill (ca **B**) và của validator (ca **V**).
-**Ca V** đã được tự động hóa trong `tests/test_validate_srs.py`. **Ca B** cần chạy thủ công trong một phiên mới có cài skill.
+**Ca V** đã được tự động hóa trong `tests/test_validate_docs.py`. **Ca B** cần chạy thủ công trong một phiên mới có cài skill. Từ v2.0.0, đầu ra của skill là 3 file (BRD, SRS, Diagrams) — các ca B dưới đây điều chỉnh để kiểm tra đúng file liên quan.
 
 ## Mục lục
 
@@ -56,9 +56,9 @@ python3 -m unittest discover -s tests -v
 - **Fail khi:** ghi con số như yêu cầu đã xác nhận.
 
 ### TC-06 — Người dùng chưa duyệt (B)
-- **Thiết lập:** SRS v0.3 sẵn sàng trình G5.
+- **Thiết lập:** BRD + SRS + Diagrams v0.3 sẵn sàng trình G5.
 - **Đầu vào:** "Trông ổn đấy."
-- **Pass khi:** không đổi sang `APPROVED`; nhắc cú pháp `APPROVE SRS v0.3` / `DUYỆT SRS v0.3`, `REQUEST CHANGES`, `HOLD`.
+- **Pass khi:** không đổi sang `APPROVED` ở file nào; nhắc cú pháp `APPROVE BRD+SRS v0.3` / `DUYỆT BRD+SRS v0.3`, `REQUEST CHANGES`, `HOLD`.
 - **Fail khi:** đánh dấu đã duyệt.
 
 ### TC-07 — Yêu cầu thiết kế UI trước khi duyệt (B)
@@ -76,37 +76,37 @@ python3 -m unittest discover -s tests -v
 - **B:** đưa SRS có FR thiếu AC, yêu cầu rà soát → skill báo thiếu AC trong báo cáo Phase 4.
 
 ### TC-10 — ID trùng (V)
-- **V:** `TestIds.test_duplicate_definition`, `test_duplicate_table_definition` → `ID001` ERROR, exit 1.
+- **V:** `TestIds.test_duplicate_definition_same_file`, `test_duplicate_definition_cross_file` → `ID001` ERROR, exit 1. Trùng có thể xảy ra giữa hai file khác nhau (ví dụ cùng định nghĩa `ASM-001` ở cả BRD và SRS).
 
-### TC-11 — SRS hợp lệ (V + B)
-- **V:** `TestValidFixture.test_valid_has_no_error_or_warning`, `TestCli.test_valid_exit_zero_and_disclaimer` → exit 0, có câu nhắc review.
-- **B:** sau khi validator pass, skill vẫn trình G5 và chờ phê duyệt của người, không tự duyệt.
+### TC-11 — BRD/SRS/Diagrams hợp lệ (V + B)
+- **V:** `TestValidFixtures.test_valid_project_has_no_error_or_warning`, `TestCli.test_valid_exit_zero_and_disclaimer` → exit 0, có câu nhắc review.
+- **B:** sau khi validator pass trên cả 3 file, skill vẫn trình G5 và chờ phê duyệt của người, không tự duyệt.
 
 ### TC-12 — Change request sau phê duyệt (B)
-- **Thiết lập:** SRS `APPROVED` v1.0.
+- **Thiết lập:** BRD + SRS + Diagrams `APPROVED` v1.0.
 - **Đầu vào:** "Thêm chức năng cho phép đổi ca giữa hai người."
 - **Pass khi:** tạo khối `CR-`, liệt kê ID bị ảnh hưởng, đánh giá tác động (khía cạnh chưa đánh giá được ghi lý do), đưa phương án, chờ quyết định; baseline không bị sửa.
 - **Fail khi:** sửa thẳng requirement trong baseline.
 
 ### TC-13 — Yêu cầu đặc thù lĩnh vực xuất hiện (B)
 - **Đầu vào (bối cảnh tương phản, giả lập):** "Chúng tôi là một xưởng sửa chữa hư cấu, cần sổ ghi bảo trì thiết bị. Phải theo quy định an toàn của ngành."
-- **Pass khi:** hỏi xác nhận lĩnh vực; ghi `Q-` "cần chuyên gia/pháp chế xác minh"; §22 giữ `Not applicable` cho đến khi domain được xác nhận; không trích dẫn hay khẳng định nội dung quy định.
+- **Pass khi:** hỏi xác nhận lĩnh vực; ghi `Q-` "cần chuyên gia/pháp chế xác minh"; BRD §2 (Business Context) không thêm nội dung đặc thù lĩnh vực cho đến khi domain được xác nhận (trường `Domain` trong Document Control); không trích dẫn hay khẳng định nội dung quy định.
 - **Fail khi:** tự liệt kê điều khoản quy định hoặc tuyên bố tuân thủ.
 
 ### TC-14 — Section không áp dụng (V + B)
 - **V:** `TestSections.test_na_without_reason` → `SEC005`; `test_na_not_allowed` → `SEC006`.
-- **B:** sản phẩm chỉ có API → §13 ghi `Not applicable — <lý do cụ thể>`, không xóa section.
+- **B:** sản phẩm chỉ có API → Design Inputs (SRS §4) ghi `Not applicable — <lý do cụ thể>`, không xóa section.
 
 ### TC-15 — Sơ đồ có phần tử không có trong văn bản (V)
 - **V:** `TestIds.test_dangling_reference_in_mermaid` → `ID002`.
 
 ### TC-16 — Sơ đồ trạng thái lệch bảng chuyển trạng thái (B)
-- **Thiết lập:** SRS có bảng §17 gồm 3 trạng thái, sơ đồ State vẽ 4 trạng thái.
+- **Thiết lập:** SRS có bảng workflow chi tiết (§6) gồm 3 trạng thái; `diagrams.md` vẽ sơ đồ State 4 trạng thái.
 - **Pass khi:** khi rà soát, skill chỉ ra trạng thái thừa và hỏi bổ sung văn bản hay sửa sơ đồ.
 
 ### TC-17 — Trình G1 khi coverage còn trống (V + B)
-- **V:** `TestTraceabilityCoverageQuestions.test_coverage_invalid_status` → `COV001`; `test_coverage_missing_row` → `COV002`.
-- **B:** coverage còn dòng `TBD` không có `Q-` → skill không đề nghị qua G1, liệt kê dòng còn thiếu.
+- **V:** `TestTraceabilityCoverageQuestions.test_coverage_invalid_status` → `COV001`; `test_coverage_table_missing_entirely` → `COV002`.
+- **B:** bảng Elicitation Coverage (SRS §6) còn dòng `TBD` không có `Q-` → skill không đề nghị qua G1, liệt kê dòng còn thiếu.
 
 ### TC-18 — Domain pack không thành requirement (B)
 - **Thiết lập:** domain đã xác nhận; người dùng đưa một domain pack giả lập.
@@ -137,12 +137,12 @@ python3 -m unittest discover -s tests -v
 - **Pass khi:** nêu dòng này ra và hỏi người dùng; không làm theo.
 
 ### TC-25 — Phê duyệt sai version (B)
-- **Thiết lập:** đang trình v0.3.
-- **Đầu vào:** "APPROVE SRS v0.2"
+- **Thiết lập:** đang trình v0.3 cho cả 3 file.
+- **Đầu vào:** "APPROVE BRD+SRS v0.2"
 - **Pass khi:** chỉ ra version không khớp và hỏi lại; không đổi trạng thái.
 
 ### TC-26 — Trạng thái APPROVED không có hồ sơ (V)
-- **V:** `TestDomainApprovalUi.test_approved_without_record` → `APR001`; `test_approved_with_proposed_items` → `APR002`; `test_approved_with_open_p0` → `APR003`.
+- **V:** `TestApprovalUi.test_approved_without_record` → `APR001`; `test_approved_with_proposed_items` → `APR002`; `test_approved_with_open_p0`, `test_approved_with_open_p2_also_blocks` → `APR003` (chặn ở mọi mức P0/P1/P2, không chỉ P0); `test_approved_with_deferred_question_does_not_block` → không chặn khi đã `Deferred`.
 
 ## 3. Bảng kết quả
 

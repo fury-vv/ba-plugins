@@ -1,22 +1,36 @@
 #!/usr/bin/env python3
-"""Kiểm tra cấu trúc SRS Markdown theo quy ước của skill srs-analysis.
+"""Kiểm tra cấu trúc 3 tài liệu BRD / SRS / Diagrams theo quy ước skill srs-analysis.
 
-Script chỉ ĐỌC file đầu vào, không sửa. Nó kiểm tra cấu trúc và lỗi cơ học:
-section bắt buộc, ID trùng hoặc sai định dạng, tham chiếu tới ID chưa định
-nghĩa, trường bắt buộc của requirement, acceptance criteria, placeholder/TBD,
-traceability, bảng coverage, khối sơ đồ Mermaid, nhất quán trạng thái phê duyệt.
+Script chỉ ĐỌC các file đầu vào, không sửa. Nó kiểm tra cấu trúc và lỗi cơ học:
+section bắt buộc theo đúng loại tài liệu, ID trùng hoặc sai định dạng, tham
+chiếu tới ID chưa định nghĩa (kể cả tham chiếu xuyên 3 file), trường bắt buộc
+của requirement, acceptance criteria, placeholder/TBD, traceability, bảng
+coverage, khối sơ đồ Mermaid, nhất quán trạng thái phê duyệt.
+
+Ba file dùng chung một không gian ID: một ID được định nghĩa ở đúng một chỗ
+trong cả 3 file, có thể được tham chiếu từ file khác.
 
 Script KHÔNG chứng minh nội dung nghiệp vụ đúng và KHÔNG thay thế việc review
-của BA và stakeholder. Quy ước được kiểm tra nằm ở references/srs-template.md.
+của BA và stakeholder. Quy ước được kiểm tra nằm ở references/conventions.md,
+references/brd-template.md, references/srs-template.md,
+references/diagrams-template.md.
 
 Cách dùng:
-    python3 validate_srs.py docs/srs/srs.md
-    python3 validate_srs.py --partial examples/sample-srs-excerpt.md
-    python3 validate_srs.py --ascii docs/srs/srs.md
+    python3 validate_docs.py --brd docs/brd/brd.md --srs docs/srs/srs.md --diagrams docs/diagrams/diagrams.md
+    python3 validate_docs.py --srs docs/srs/srs.md --diagrams docs/diagrams/diagrams.md
+    python3 validate_docs.py --partial --srs examples/sample-srs-excerpt.md
+    python3 validate_docs.py --ascii --brd docs/brd/brd.md --srs docs/srs/srs.md --diagrams docs/diagrams/diagrams.md
 
 Tùy chọn:
-    --partial   Trích đoạn SRS: bỏ kiểm tra đủ section; tham chiếu treo chỉ là WARNING.
-    --ascii     In kết quả không dấu (cho console không hiển thị được UTF-8).
+    --brd PATH        Đường dẫn file BRD.
+    --srs PATH        Đường dẫn file SRS.
+    --diagrams PATH   Đường dẫn file sơ đồ.
+    --partial         Trích đoạn: bỏ kiểm tra đủ section; tham chiếu treo chỉ là WARNING.
+    --ascii           In kết quả không dấu (cho console không hiển thị được UTF-8).
+
+Phải cung cấp ít nhất một trong --brd/--srs/--diagrams. File không được cung
+cấp sẽ bị bỏ qua (WARNING), và tham chiếu treo tới ID lẽ ra thuộc file đó chỉ
+là WARNING, không phải ERROR (giống hành vi --partial).
 
 Exit code:
     0  không có ERROR (có thể có WARNING/INFO)
@@ -32,54 +46,66 @@ import argparse
 import re
 import sys
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = "2.0.0"
 
 DISCLAIMER = (
     "Lưu ý: validator chỉ kiểm tra cấu trúc và lỗi cơ học; không chứng minh nội dung "
     "nghiệp vụ đúng và không thay thế review của BA và stakeholder."
 )
 
-# (số, English title, được phép ghi Not applicable)
-SECTIONS: List[Tuple[int, str, bool]] = [
-    (1, "Document Control", False),
-    (2, "Executive Summary", False),
+# ---------------------------------------------------------------------------
+# Khung section theo từng loại tài liệu. "Document Control" là một bảng
+# | Field | Value | ở PHẦN MỞ ĐẦU (trước section 1), không phải section đánh
+# số, để section 1 đúng là "Introduction — Giới thiệu" như chuẩn SRS yêu cầu.
+# ---------------------------------------------------------------------------
+
+Sections = List[Tuple[int, str, bool]]  # (số, English title, được phép Not applicable)
+
+BRD_SECTIONS: Sections = [
+    (1, "Introduction", False),
+    (2, "Business Context and Problem Statement", False),
     (3, "Goals and Success Metrics", False),
     (4, "Scope", False),
     (5, "Stakeholders and Users", False),
     (6, "Glossary", True),
     (7, "Assumptions, Constraints and Dependencies", False),
-    (8, "Business Processes and Use Cases", True),
-    (9, "Functional Requirements", False),
-    (10, "Business Rules", True),
-    (11, "Data Requirements", True),
-    (12, "Interface and Integration Requirements", True),
-    (13, "User Interface Requirements", True),
-    (14, "Non-Functional Requirements", False),
-    (15, "User Stories", True),
-    (16, "Permissions", True),
-    (17, "Lifecycle and State Transitions", True),
-    (18, "Reports, Search, Exports and Notifications", True),
-    (19, "Security, Privacy, Audit and Retention", True),
-    (20, "Migration, Rollout and Operations", True),
-    (21, "Models and Diagrams", False),
-    (22, "Domain-Specific Considerations", True),
-    (23, "Risks", False),
-    (24, "Open Questions", False),
-    (25, "Decision Log", False),
-    (26, "Sources", False),
-    (27, "Elicitation Coverage", False),
-    (28, "Traceability Matrix", False),
-    (29, "Approval Record", False),
-    (30, "Change Requests", True),
+    (8, "High-Level Business Processes", True),
+    (9, "Risks", False),
+    (10, "Approval Record", False),
 ]
-SECTION_BY_NUM: Dict[int, Tuple[str, bool]] = {n: (t, na) for n, t, na in SECTIONS}
-COVERAGE_SECTIONS = list(range(2, 23))
 
-# Tiền tố được định nghĩa ở ô đầu của dòng bảng, trong section sở hữu.
-TABLE_OWNERS: Dict[str, int] = {"GOAL": 3, "ASM": 7, "UXP": 13, "RISK": 23, "Q": 24, "DEC": 25, "SRC": 26}
+SRS_SECTIONS: Sections = [
+    (1, "Introduction", False),
+    (2, "High-Level Requirements", False),
+    (3, "Functional Requirements", False),
+    (4, "Non-Functional Requirements", False),
+    (5, "Security Requirements", False),
+    (6, "Other Requirements and Appendix", False),
+]
+
+DIAGRAMS_SECTIONS: Sections = [
+    (1, "Diagrams", False),
+]
+
+FILE_KINDS: Dict[str, Sections] = {"BRD": BRD_SECTIONS, "SRS": SRS_SECTIONS, "DIAGRAMS": DIAGRAMS_SECTIONS}
+
+# Tiền tố định nghĩa ở ô đầu một dòng bảng. Để không nhầm bảng Traceability
+# Matrix (chỉ THAM CHIẾU GOAL-/SRC- ở cột đầu) thành nơi ĐỊNH NGHĨA, một bảng
+# chỉ được coi là "sổ đăng ký" của một tiền tố khi header của nó chứa đủ các
+# từ khóa đặc trưng dưới đây — quét toàn file, không theo số section cụ thể.
+TABLE_PREFIXES: Tuple[str, ...] = ("GOAL", "ASM", "RISK", "Q", "DEC", "SRC", "UXP")
+TABLE_HEADER_HINTS: Dict[str, Tuple[str, ...]] = {
+    "GOAL": ("goal", "success metric"),
+    "ASM": ("assumption",),
+    "RISK": ("risk", "impact", "likelihood"),
+    "Q": ("question", "ask whom"),
+    "DEC": ("decision", "decided by"),
+    "SRC": ("type", "provided by"),
+    "UXP": ("type", "description", "source"),
+}
 REQ_PREFIXES = ("FR", "BR", "DR", "IR", "UIR", "NFR")
 ALL_PREFIXES = (
     "AC", "FR", "BR", "DR", "IR", "UIR", "NFR", "GOAL", "US", "UC",
@@ -132,11 +158,13 @@ LEVEL_ORDER = {"ERROR": 0, "WARNING": 1, "INFO": 2}
 class Finding:
     level: str
     code: str
+    file_tag: str
     line: int
     message: str
 
     def render(self) -> str:
-        return f"{self.level} {self.code} L{self.line}: {self.message}"
+        where = f"{self.file_tag}:L{self.line}" if self.file_tag else f"L{self.line}"
+        return f"{self.level} {self.code} {where}: {self.message}"
 
 
 @dataclass
@@ -163,6 +191,9 @@ class Table:
         for name in names:
             if name in self.header:
                 return self.header.index(name)
+        for i, h in enumerate(self.header):
+            if any(name in h for name in names):
+                return i
         return None
 
 
@@ -196,29 +227,41 @@ def to_ascii(text: str) -> str:
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).encode("ascii", "replace").decode("ascii")
 
 
-class Validator:
-    def __init__(self, text: str, partial: bool = False) -> None:
+@dataclass
+class DefRecord:
+    file_tag: str
+    line: int
+
+
+class FileValidator:
+    """Quét và kiểm tra cấu trúc của MỘT file (BRD, SRS, hoặc Diagrams)."""
+
+    def __init__(self, kind: str, file_tag: str, text: str, partial: bool = False) -> None:
+        self.kind = kind
+        self.file_tag = file_tag
+        self.sections_spec = FILE_KINDS[kind]
+        self.section_by_num: Dict[int, Tuple[str, bool]] = {n: (t, na) for n, t, na in self.sections_spec}
         self.text = text
         self.lines = text.splitlines()
         self.partial = partial
         self.findings: List[Finding] = []
         n = len(self.lines)
-        self.code = [False] * n      # dòng thuộc khối code thường hoặc dòng rào fence
-        self.mermaid = [False] * n   # dòng nội dung của khối mermaid
-        self.mermaid_blocks: List[Tuple[int, int]] = []  # (dòng mở fence, dòng đóng hoặc n)
+        self.code = [False] * n
+        self.mermaid = [False] * n
+        self.mermaid_blocks: List[Tuple[int, int]] = []
         self.sections: List[Section] = []
         self.blocks: List[Block] = []
-        self.defs: Dict[str, List[int]] = {}
+        self.preamble_end = n
+        self.local_defs: Dict[str, List[int]] = {}
         self.ac_defs: List[Tuple[str, int]] = []
         self.doc_status: Optional[str] = None
         self.doc_version: Optional[str] = None
-        self.domain_confirmed: Optional[bool] = None
-        self.open_p0: List[str] = []
         self.q_counts: Dict[str, int] = {}
+        self.open_questions: List[str] = []  # mọi câu hỏi Status=Open, bất kể Priority (P0/P1/P2)
+        self.coverage_counts: Dict[str, int] = {}
 
-    # ---------- tiện ích ----------
     def add(self, level: str, code: str, idx: int, message: str) -> None:
-        self.findings.append(Finding(level, code, idx + 1 if idx >= 0 else 0, message))
+        self.findings.append(Finding(level, code, self.file_tag, idx + 1 if idx >= 0 else 0, message))
 
     def is_prose(self, idx: int) -> bool:
         return not self.code[idx] and not self.mermaid[idx]
@@ -227,12 +270,6 @@ class Validator:
         for s in self.sections:
             if s.num == num:
                 return s
-        return None
-
-    def section_num_at(self, idx: int) -> Optional[int]:
-        for s in self.sections:
-            if s.heading_idx <= idx < s.end_idx:
-                return s.num
         return None
 
     def content_lines(self, start: int, end: int) -> List[int]:
@@ -266,6 +303,9 @@ class Validator:
                 i += 1
         return result
 
+    def all_tables(self) -> List[Table]:
+        return self.tables(0, len(self.lines))
+
     def block_fields(self, block: Block) -> Dict[str, Tuple[str, int]]:
         fields: Dict[str, Tuple[str, int]] = {}
         for i in range(block.heading_idx + 1, block.end_idx):
@@ -287,6 +327,16 @@ class Validator:
             if self.is_prose(i) or self.mermaid[i]:
                 ids.extend(m.group(0) for m in ID_RE.finditer(self.lines[i]))
         return ids
+
+    def block_at(self, idx: int) -> Optional[Block]:
+        for b in self.blocks:
+            if b.heading_idx < idx < b.end_idx:
+                return b
+        return None
+
+    def block_status(self, block: Block) -> str:
+        fields = self.block_fields(block)
+        return norm_value(fields["status"][0]) if "status" in fields else ""
 
     # ---------- phân tích cấu trúc ----------
     def scan_fences(self) -> None:
@@ -338,6 +388,7 @@ class Validator:
             elif level == 3:
                 h3.append((i, line))
         n = len(self.lines)
+        self.preamble_end = h2[0][0] if h2 else n
         for k, (idx, title) in enumerate(h2):
             end = h2[k + 1][0] if k + 1 < len(h2) else n
             num_m = NUMBERED_RE.match(title)
@@ -352,15 +403,15 @@ class Validator:
             end = later[0] if later else n
             self.blocks.append(Block(m.group(1), idx, end))
 
-    # ---------- kiểm tra ----------
+    # ---------- kiểm tra cấu trúc ----------
     def check_sections(self) -> None:
         seen: Dict[int, int] = {}
         for sec in self.sections:
-            if sec.num is None or sec.num not in SECTION_BY_NUM:
+            if sec.num is None or sec.num not in self.section_by_num:
                 self.add("WARNING", "SEC007", sec.heading_idx,
-                         f"Section H2 không thuộc danh sách chuẩn: '{self.lines[sec.heading_idx].strip()}'.")
+                         f"Section H2 không thuộc danh sách chuẩn cho {self.kind}: '{self.lines[sec.heading_idx].strip()}'.")
                 continue
-            expected, _ = SECTION_BY_NUM[sec.num]
+            expected, _ = self.section_by_num[sec.num]
             if english_title(sec.raw_title) != expected.lower():
                 self.add("ERROR", "SEC002", sec.heading_idx,
                          f"Section {sec.num} có tên '{sec.raw_title.strip()}'; mong đợi '## {sec.num}. {expected} — <tiếng Việt>'.")
@@ -370,11 +421,11 @@ class Validator:
             else:
                 seen[sec.num] = sec.heading_idx
         if not self.partial:
-            for num, title, _ in SECTIONS:
+            for num, title, _ in self.sections_spec:
                 if num not in seen:
                     self.add("ERROR", "SEC001", -1, f"Thiếu section bắt buộc: '## {num}. {title} — <tiếng Việt>'.")
         for sec in self.sections:
-            if sec.num is None or sec.num not in SECTION_BY_NUM:
+            if sec.num is None or sec.num not in self.section_by_num:
                 continue
             body = self.content_lines(sec.heading_idx + 1, sec.end_idx)
             if not body:
@@ -386,26 +437,24 @@ class Validator:
                 if len(reason) < 3:
                     self.add("WARNING", "SEC005", sec.heading_idx + 1,
                              f"Section {sec.num} ghi Not applicable nhưng thiếu lý do.")
-                if not SECTION_BY_NUM[sec.num][1]:
+                if not self.section_by_num[sec.num][1]:
                     self.add("WARNING", "SEC006", sec.heading_idx + 1,
-                             f"Section {sec.num} ({SECTION_BY_NUM[sec.num][0]}) không được ghi Not applicable.")
+                             f"Section {sec.num} ({self.section_by_num[sec.num][0]}) không được ghi Not applicable.")
 
     def collect_definitions(self) -> None:
         for b in self.blocks:
-            self.defs.setdefault(b.ident, []).append(b.heading_idx)
-        for sec in self.sections:
-            if sec.num is None:
-                continue
-            owned = [p for p, num in TABLE_OWNERS.items() if num == sec.num]
+            self.local_defs.setdefault(b.ident, []).append(b.heading_idx)
+        for table in self.all_tables():
+            header_text = " ".join(table.header)
+            owned = [p for p in TABLE_PREFIXES if all(h in header_text for h in TABLE_HEADER_HINTS[p])]
             if not owned:
                 continue
-            for table in self.tables(sec.heading_idx + 1, sec.end_idx):
-                for idx, cells in table.rows:
-                    if not cells:
-                        continue
-                    first = clean_cell(cells[0])
-                    if ID_FULL_RE.fullmatch(first) and first.split("-")[0] in owned:
-                        self.defs.setdefault(first, []).append(idx)
+            for idx, cells in table.rows:
+                if not cells:
+                    continue
+                first = clean_cell(cells[0])
+                if ID_FULL_RE.fullmatch(first) and first.split("-")[0] in owned:
+                    self.local_defs.setdefault(first, []).append(idx)
         for i, line in enumerate(self.lines):
             if not self.is_prose(i):
                 continue
@@ -413,50 +462,42 @@ class Validator:
             if m:
                 ac = m.group(1)
                 self.ac_defs.append((ac, i))
-                self.defs.setdefault(ac, []).append(i)
+                self.local_defs.setdefault(ac, []).append(i)
 
-    def check_ids(self) -> None:
-        for ident, where in self.defs.items():
+    def local_duplicate_check(self) -> None:
+        for ident, where in self.local_defs.items():
             if len(where) > 1:
                 first = where[0] + 1
                 for idx in where[1:]:
-                    self.add("ERROR", "ID001", idx, f"ID {ident} được định nghĩa lại (lần đầu ở L{first}).")
-        dangling_level = "WARNING" if self.partial else "ERROR"
-        refs: Dict[str, List[int]] = {}
+                    self.add("ERROR", "ID001", idx, f"ID {ident} được định nghĩa lại trong cùng file (lần đầu ở L{first}).")
+
+    def malformed_tokens(self) -> None:
         malformed: Dict[str, int] = {}
+        for i, line in enumerate(self.lines):
+            if not (self.is_prose(i) or self.mermaid[i]):
+                continue
+            for m in TOKEN_RE.finditer(line):
+                tok = m.group(0)
+                if any(ch.isdigit() for ch in tok) and not ID_FULL_RE.fullmatch(tok) and tok not in malformed:
+                    malformed[tok] = i
+        for tok, idx in malformed.items():
+            self.add("WARNING", "ID003", idx, f"ID sai định dạng: '{tok}' (xem references/conventions.md).")
+
+    def collect_refs(self) -> Dict[str, List[int]]:
+        refs: Dict[str, List[int]] = {}
         for i, line in enumerate(self.lines):
             if not (self.is_prose(i) or self.mermaid[i]):
                 continue
             for m in ID_RE.finditer(line):
                 refs.setdefault(m.group(0), []).append(i)
-            for m in TOKEN_RE.finditer(line):
-                tok = m.group(0)
-                if any(ch.isdigit() for ch in tok) and not ID_FULL_RE.fullmatch(tok) and tok not in malformed:
-                    malformed[tok] = i
-        for ident, where in refs.items():
-            if ident not in self.defs:
-                extra = f" (xuất hiện {len(where)} lần)" if len(where) > 1 else ""
-                self.add(dangling_level, "ID002", where[0], f"Tham chiếu tới ID chưa được định nghĩa: {ident}{extra}.")
+        return refs
+
+    def check_ac_parents(self) -> None:
         for ac, idx in self.ac_defs:
             parent = ac[3:-3]
-            if parent not in self.defs:
-                self.add(dangling_level, "ID002", idx, f"{ac} thuộc {parent}, nhưng {parent} chưa được định nghĩa.")
             owner = self.block_at(idx)
-            if owner is None or owner.ident != parent:
-                where = owner.ident if owner else "ngoài mọi khối"
-                self.add("WARNING", "ID004", idx, f"{ac} phải được định nghĩa trong khối {parent}, hiện nằm ở {where}.")
-        for tok, idx in malformed.items():
-            self.add("WARNING", "ID003", idx, f"ID sai định dạng: '{tok}' (xem mục A4 của srs-template.md).")
-
-    def block_at(self, idx: int) -> Optional[Block]:
-        for b in self.blocks:
-            if b.heading_idx < idx < b.end_idx:
-                return b
-        return None
-
-    def block_status(self, block: Block) -> str:
-        fields = self.block_fields(block)
-        return norm_value(fields["status"][0]) if "status" in fields else ""
+            if owner is not None and owner.ident != parent:
+                self.add("WARNING", "ID004", idx, f"{ac} phải được định nghĩa trong khối {parent}, hiện nằm ở {owner.ident}.")
 
     def check_requirements(self) -> None:
         for b in self.blocks:
@@ -539,26 +580,21 @@ class Validator:
                 self.add("WARNING", "DIA001", b.heading_idx, f"{b.ident} không có khối mermaid.")
             if not self.block_fields(b).get("source", ("", 0))[0]:
                 self.add("WARNING", "DIA004", b.heading_idx, f"{b.ident} thiếu trường Source.")
-        sec21 = self.section(21)
-        if sec21 is not None and not self.na_info(sec21)[0]:
-            has_context = False
-            for b in dia_blocks:
-                if sec21.heading_idx < b.heading_idx < sec21.end_idx:
-                    if "context" in self.block_fields(b).get("type", ("", 0))[0].lower():
-                        has_context = True
-            if not has_context:
-                self.add("WARNING", "DIA005", sec21.heading_idx, "Section 21 chưa có sơ đồ Type: Context (bắt buộc).")
+
+    def has_context_diagram(self) -> bool:
+        for b in self.blocks:
+            if b.ident.startswith("DIA-") and "context" in self.block_fields(b).get("type", ("", 0))[0].lower():
+                return True
+        return False
 
     def check_placeholders(self) -> int:
-        sec27 = self.section(27)
         tbd_count = 0
         for i, line in enumerate(self.lines):
             if not self.is_prose(i):
                 continue
             stripped = INLINE_CODE_RE.sub("", line)
-            in_coverage = sec27 is not None and sec27.heading_idx <= i < sec27.end_idx
             m = TBD_RE.search(stripped)
-            if m and not in_coverage:
+            if m:
                 tbd_count += 1
                 self.add("WARNING", "PH001", i, f"Còn '{m.group(1)}': cần giải quyết hoặc gắn Q- và người trả lời.")
             b = BRACKET_RE.search(stripped)
@@ -567,17 +603,17 @@ class Validator:
         return tbd_count
 
     def check_document_control(self) -> None:
-        sec1 = self.section(1)
-        if sec1 is None:
-            return
         fields: Dict[str, Tuple[str, int]] = {}
-        for table in self.tables(sec1.heading_idx + 1, sec1.end_idx):
+        for table in self.tables(0, self.preamble_end):
             if "field" in table.header and "value" in table.header:
                 fi, vi = table.header.index("field"), table.header.index("value")
                 for idx, cells in table.rows:
                     if len(cells) > max(fi, vi):
                         fields[clean_cell(cells[fi]).lower()] = (clean_cell(cells[vi]), idx)
-        status_raw, status_idx = fields.get("status", ("", sec1.heading_idx))
+        if not fields:
+            self.add("WARNING", "DOC003", -1, "Không tìm thấy bảng Document Control (| Field | Value |) ở đầu file, trước section 1.")
+            return
+        status_raw, status_idx = fields.get("status", ("", 0))
         status = re.sub(r"\s+[-–—]\s+", " — ", status_raw.upper())
         status = re.sub(r"\s+", " ", status).strip()
         if status not in DOC_STATUS:
@@ -585,38 +621,26 @@ class Validator:
                      f"Status tài liệu '{status_raw}' không hợp lệ (DRAFT — NOT APPROVED, APPROVED, ON HOLD).")
         else:
             self.doc_status = status
-        version_raw, version_idx = fields.get("document version", ("", sec1.heading_idx))
+        version_raw, version_idx = fields.get("document version", ("", 0))
         vm = VERSION_RE.match(version_raw)
         if not vm:
             self.add("WARNING", "APR005", version_idx, f"Document version '{version_raw}' không đúng dạng X.Y.")
         else:
             self.doc_version = f"{int(vm.group(1))}.{int(vm.group(2))}"
-        domain = fields.get("domain", ("", 0))[0].lower()
-        self.domain_confirmed = domain.startswith("confirmed") or domain.startswith("đã xác nhận")
-
-    def check_domain(self) -> None:
-        sec22 = self.section(22)
-        if sec22 is None or self.domain_confirmed is None:
-            return
-        body = self.content_lines(sec22.heading_idx + 1, sec22.end_idx)
-        if body and not self.na_info(sec22)[0] and not self.domain_confirmed:
-            self.add("WARNING", "DOM001", sec22.heading_idx,
-                     "Section 22 có nội dung nhưng Domain trong Document Control chưa được xác nhận.")
 
     def check_questions(self) -> None:
-        sec = self.section(24)
-        if sec is None:
-            return
-        for table in self.tables(sec.heading_idx + 1, sec.end_idx):
+        for table in self.all_tables():
             pi, si = table.col("priority"), table.col("status")
+            if pi is None or si is None:
+                continue
             for idx, cells in table.rows:
                 if not cells:
                     continue
                 qid = clean_cell(cells[0])
                 if not re.fullmatch(r"Q-\d{3}", qid):
                     continue
-                prio = norm_value(cells[pi]) if pi is not None and pi < len(cells) else ""
-                stat = norm_value(cells[si]) if si is not None and si < len(cells) else ""
+                prio = norm_value(cells[pi]) if pi < len(cells) else ""
+                stat = norm_value(cells[si]) if si < len(cells) else ""
                 problems = []
                 if prio not in Q_PRIORITY:
                     problems.append(f"Priority '{prio or '(trống)'}'")
@@ -626,98 +650,61 @@ class Validator:
                     self.add("WARNING", "Q001", idx, f"{qid}: {', '.join(problems)} không hợp lệ.")
                 key = f"{prio.upper() or '?'} {stat or '?'}"
                 self.q_counts[key] = self.q_counts.get(key, 0) + 1
-                if prio == "p0" and stat == "open":
-                    self.open_p0.append(qid)
+                if stat == "open":
+                    self.open_questions.append(qid)
 
-    def check_approval(self) -> None:
-        if self.doc_status != "APPROVED":
-            return
-        sec29 = self.section(29)
-        matched = False
-        if sec29 is not None:
-            for table in self.tables(sec29.heading_idx + 1, sec29.end_idx):
-                vi, di = table.col("version"), table.col("decision")
-                if vi is None or di is None:
-                    continue
-                for _, cells in table.rows:
-                    if len(cells) <= max(vi, di):
-                        continue
-                    vm = VERSION_RE.match(clean_cell(cells[vi]))
-                    version = f"{int(vm.group(1))}.{int(vm.group(2))}" if vm else ""
-                    decision = clean_cell(cells[di]).upper()
-                    if version == self.doc_version and decision in ("APPROVE", "DUYỆT"):
-                        matched = True
-        if not matched:
-            self.add("WARNING", "APR001", (sec29.heading_idx if sec29 else -1),
-                     f"Tài liệu APPROVED nhưng Approval Record không có dòng APPROVE cho version {self.doc_version}.")
-        proposed = [b.ident for b in self.blocks
-                    if b.ident.split("-")[0] in REQ_PREFIXES + ("US", "UC", "DIA") and self.block_status(b) == "proposed"]
-        if proposed:
-            shown = ", ".join(proposed[:10]) + (" …" if len(proposed) > 10 else "")
-            self.add("WARNING", "APR002", -1, f"Tài liệu APPROVED nhưng còn mục Status Proposed: {shown}.")
-        if self.open_p0:
-            self.add("WARNING", "APR003", -1,
-                     f"Tài liệu APPROVED nhưng còn câu hỏi P0 Open: {', '.join(self.open_p0)}.")
+    def proposed_active_blocks(self) -> List[str]:
+        return [b.ident for b in self.blocks
+                if b.ident.split("-")[0] in REQ_PREFIXES + ("US", "UC", "DIA") and self.block_status(b) == "proposed"]
+
+    def find_approval_table(self) -> Optional[Table]:
+        for table in self.all_tables():
+            vi, di = table.col("version"), table.col("decision")
+            if vi is not None and di is not None:
+                return table
+        return None
 
     def check_coverage(self) -> Dict[str, int]:
         counts: Dict[str, int] = {}
-        sec = self.section(27)
-        if sec is None or self.na_info(sec)[0]:
-            return counts
-        seen: Set[int] = set()
-        found_table = False
-        for table in self.tables(sec.heading_idx + 1, sec.end_idx):
-            ci, si = table.col("section"), table.col("status")
-            if ci is None or si is None:
+        found = False
+        for table in self.all_tables():
+            si = table.col("status")
+            topic_i = table.col("topic", "section")
+            if si is None or topic_i is None:
                 continue
-            found_table = True
+            found = True
             for idx, cells in table.rows:
-                if len(cells) <= max(ci, si):
+                if len(cells) <= si:
                     continue
-                m = re.match(r"^(\d+)", clean_cell(cells[ci]))
-                if not m:
-                    continue
-                seen.add(int(m.group(1)))
                 status = norm_value(cells[si])
                 counts[status or "(trống)"] = counts.get(status or "(trống)", 0) + 1
                 if status not in COVERAGE_STATUS:
-                    self.add("WARNING", "COV001", idx,
-                             f"Coverage section {m.group(1)}: trạng thái '{status or '(trống)'}' không hợp lệ.")
-        if not found_table:
-            self.add("WARNING", "COV002", sec.heading_idx, "Section 27 không có bảng coverage (cột Section, Status).")
-        else:
-            missing = [str(n) for n in COVERAGE_SECTIONS if n not in seen]
-            if missing:
-                self.add("WARNING", "COV002", sec.heading_idx, f"Bảng coverage thiếu dòng cho section: {', '.join(missing)}.")
+                    self.add("WARNING", "COV001", idx, f"Elicitation coverage: trạng thái '{status or '(trống)'}' không hợp lệ.")
+        if self.kind == "SRS" and not found:
+            self.add("WARNING", "COV002", -1, "Không tìm thấy bảng Elicitation Coverage (cột Topic/Section, Status) trong SRS.")
         return counts
 
-    def check_traceability(self) -> None:
-        sec = self.section(28)
-        if sec is None or self.na_info(sec)[0]:
-            return
+    def traced_ids(self) -> Set[str]:
         traced: Set[str] = set()
-        for i in range(sec.heading_idx + 1, sec.end_idx):
-            if self.is_prose(i):
-                traced.update(ID_RE.findall(self.lines[i]))
-        for b in self.blocks:
-            if b.ident.split("-")[0] in REQ_PREFIXES and self.block_status(b) not in ("rejected", "superseded"):
-                if b.ident not in traced:
-                    self.add("WARNING", "TR001", b.heading_idx, f"{b.ident} chưa có trong ma trận truy vết (section 28).")
-        for ident, where in self.defs.items():
-            if ident.startswith("GOAL-") and ident not in traced:
-                self.add("WARNING", "TR002", where[0], f"{ident} chưa có trong ma trận truy vết (section 28).")
+        for table in self.all_tables():
+            ri = table.col("requirement")
+            gi = table.col("goal / source", "goal")
+            if ri is None and gi is None:
+                continue
+            for _, cells in table.rows:
+                for i in (ri, gi):
+                    if i is not None and i < len(cells):
+                        traced.update(ID_RE.findall(cells[i]))
+        return traced
 
     def check_ui(self) -> None:
-        sec = self.section(13)
-        if sec is None:
-            return
-        for i in range(sec.heading_idx + 1, sec.end_idx):
+        for i, line in enumerate(self.lines):
             if not self.is_prose(i):
                 continue
-            for m in HEX_RE.finditer(self.lines[i]):
+            for m in HEX_RE.finditer(line):
                 if len(m.group(1)) not in (3, 4, 6, 8):
                     self.add("WARNING", "UI001", i, f"Mã màu '#{m.group(1)}' không đúng định dạng HEX (3, 4, 6 hoặc 8 ký tự).")
-        for table in self.tables(sec.heading_idx + 1, sec.end_idx):
+        for table in self.all_tables():
             ti, si = table.col("type"), table.col("source")
             for idx, cells in table.rows:
                 if not cells or not re.fullmatch(r"UXP-\d{3}", clean_cell(cells[0])):
@@ -729,99 +716,245 @@ class Validator:
                     self.add("WARNING", "UI003", idx,
                              f"{uxp}: Type '{clean_cell(cells[ti])}' không hợp lệ (Constraint, Preference, Reference).")
 
-    # ---------- chạy ----------
-    def run(self) -> List[Finding]:
+    def run_local(self) -> None:
         if not self.text.strip():
             self.add("ERROR", "DOC001", -1, "File rỗng.")
-            return self.findings
+            return
         self.scan_fences()
         self.scan_headings()
         self.check_sections()
         self.collect_definitions()
-        self.check_ids()
+        self.local_duplicate_check()
+        self.malformed_tokens()
+        self.check_ac_parents()
         self.check_requirements()
         self.check_diagrams()
-        tbd_count = self.check_placeholders()
+        self.check_placeholders()
         self.check_document_control()
-        self.check_domain()
         self.check_questions()
-        self.check_approval()
-        coverage = self.check_coverage()
-        self.check_traceability()
+        self.coverage_counts = self.check_coverage()
         self.check_ui()
-        self.add_info(tbd_count, coverage)
-        return self.findings
-
-    def add_info(self, tbd_count: int, coverage: Dict[str, int]) -> None:
-        if self.partial:
-            self.add("INFO", "INF000", -1, "Chế độ --partial: bỏ kiểm tra đủ section; tham chiếu treo chỉ là WARNING.")
-        counts: Dict[str, int] = {}
-        for ident in self.defs:
-            prefix = ident.split("-")[0]
-            counts[prefix] = counts.get(prefix, 0) + 1
-        order = ["GOAL", "FR", "BR", "DR", "IR", "UIR", "NFR", "US", "UC", "AC", "DIA", "ASM", "Q", "RISK", "DEC", "SRC", "UXP", "CR"]
-        summary = ", ".join(f"{p}={counts[p]}" for p in order if p in counts) or "không có"
-        self.add("INFO", "INF001", -1, f"Số ID đã định nghĩa: {summary}.")
-        if self.q_counts:
-            q = ", ".join(f"{k}={v}" for k, v in sorted(self.q_counts.items()))
-            self.add("INFO", "INF002", -1, f"Câu hỏi theo Priority/Status: {q}.")
-        self.add("INFO", "INF003", -1, f"Số dòng còn TBD/TODO (ngoài bảng coverage): {tbd_count}.")
-        if coverage:
-            c = ", ".join(f"{k}={v}" for k, v in sorted(coverage.items()))
-            self.add("INFO", "INF004", -1, f"Coverage: {c}.")
 
 
-def validate_text(text: str, partial: bool = False) -> List[Finding]:
-    """Kiểm tra nội dung SRS; trả về danh sách Finding. Không ghi file."""
-    return Validator(text, partial=partial).run()
+def validate_project(
+    sources: Dict[str, str], partial: bool = False
+) -> Tuple[List[Finding], Dict[str, object]]:
+    """Kiểm tra 1-3 file cùng lúc. `sources`: {"BRD": text, "SRS": text, "DIAGRAMS": text}."""
+    all_findings: List[Finding] = []
+    validators: Dict[str, FileValidator] = {}
+    missing_level = "WARNING" if (partial or len(sources) < 3) else "ERROR"
+
+    for kind in ("BRD", "SRS", "DIAGRAMS"):
+        if kind not in sources:
+            all_findings.append(Finding("WARNING", "IO002", kind, 0, f"File {kind} không được cung cấp; bỏ qua kiểm tra cấu trúc của file này."))
+            continue
+        fv = FileValidator(kind, kind, sources[kind], partial=partial)
+        fv.run_local()
+        validators[kind] = fv
+        all_findings.extend(fv.findings)
+
+    # ---- hợp nhất ID định nghĩa và kiểm tra trùng xuyên file ----
+    global_defs: Dict[str, List[DefRecord]] = {}
+    for kind, fv in validators.items():
+        for ident, lines in fv.local_defs.items():
+            for ln in lines:
+                global_defs.setdefault(ident, []).append(DefRecord(kind, ln + 1))
+    for ident, records in global_defs.items():
+        if len(records) > 1:
+            # Trùng trong cùng file đã báo ở local_duplicate_check (ID001); ở đây chỉ báo trùng GIỮA các file khác nhau.
+            kinds = {r.file_tag for r in records}
+            if len(kinds) > 1:
+                first = records[0]
+                for r in records[1:]:
+                    if r.file_tag != first.file_tag:
+                        all_findings.append(Finding(
+                            "ERROR", "ID001", r.file_tag, r.line,
+                            f"ID {ident} được định nghĩa lại (đã định nghĩa ở {first.file_tag}:L{first.line}).",
+                        ))
+
+    # ---- tham chiếu xuyên file ----
+    for kind, fv in validators.items():
+        refs = fv.collect_refs()
+        for ident, where in refs.items():
+            if ident not in global_defs:
+                extra = f" (xuất hiện {len(where)} lần)" if len(where) > 1 else ""
+                all_findings.append(Finding(missing_level, "ID002", kind, where[0] + 1,
+                                             f"Tham chiếu tới ID chưa được định nghĩa ở file nào: {ident}{extra}."))
+        for ac, idx in fv.ac_defs:
+            parent = ac[3:-3]
+            if parent not in global_defs:
+                all_findings.append(Finding(missing_level, "ID002", kind, idx + 1,
+                                             f"{ac} thuộc {parent}, nhưng {parent} chưa được định nghĩa ở file nào."))
+
+    # ---- sơ đồ Context bắt buộc (nếu có file diagrams) ----
+    if "DIAGRAMS" in validators:
+        if not any(fv.has_context_diagram() for fv in validators.values()):
+            all_findings.append(Finding("WARNING", "DIA005", "DIAGRAMS", 0,
+                                         "Chưa có sơ đồ Type: Context (bắt buộc) trong diagrams.md."))
+
+    # ---- nhất quán version/status giữa các file đang có ----
+    present = list(validators.values())
+    versions = {fv.doc_version for fv in present if fv.doc_version}
+    statuses = {fv.doc_status for fv in present if fv.doc_status}
+    if len(versions) > 1:
+        all_findings.append(Finding("WARNING", "DOC004", "-", 0,
+                                     f"Document version không khớp giữa các file: {', '.join(sorted(versions))}."))
+    if len(statuses) > 1:
+        all_findings.append(Finding("WARNING", "DOC005", "-", 0,
+                                     f"Document status không khớp giữa các file: {', '.join(sorted(statuses))}."))
+
+    # ---- traceability (toàn cục): mọi FR/BR/DR/IR/UIR/NFR còn hiệu lực và mọi GOAL phải được truy vết ----
+    traced: Set[str] = set()
+    if "SRS" in validators:
+        traced |= validators["SRS"].traced_ids()
+    for kind, fv in validators.items():
+        for b in fv.blocks:
+            if b.ident.split("-")[0] in REQ_PREFIXES and fv.block_status(b) not in ("rejected", "superseded"):
+                if b.ident not in traced:
+                    all_findings.append(Finding("WARNING", "TR001", kind, b.heading_idx + 1,
+                                                 f"{b.ident} chưa có trong ma trận truy vết (SRS, Other Requirements and Appendix)."))
+    for ident, records in global_defs.items():
+        if ident.startswith("GOAL-") and ident not in traced:
+            r = records[0]
+            all_findings.append(Finding("WARNING", "TR002", r.file_tag, r.line,
+                                         f"{ident} chưa có trong ma trận truy vết (SRS, Other Requirements and Appendix)."))
+
+    # ---- gate phê duyệt (toàn cục) ----
+    approved = "APPROVED" in statuses
+    if approved:
+        srs = validators.get("SRS")
+        matched = False
+        if srs is not None and srs.doc_version is not None:
+            approval_table = srs.find_approval_table()
+            if approval_table is not None:
+                vi, di = approval_table.col("version"), approval_table.col("decision")
+                for _, cells in approval_table.rows:
+                    if len(cells) <= max(vi, di):
+                        continue
+                    vm = VERSION_RE.match(clean_cell(cells[vi]))
+                    version = f"{int(vm.group(1))}.{int(vm.group(2))}" if vm else ""
+                    decision = clean_cell(cells[di]).upper()
+                    if version == srs.doc_version and decision in ("APPROVE", "DUYỆT"):
+                        matched = True
+        if not matched:
+            ver = srs.doc_version if srs else "?"
+            all_findings.append(Finding("WARNING", "APR001", "SRS", 0,
+                                         f"Tài liệu APPROVED nhưng Approval Record (SRS) không có dòng APPROVE cho version {ver}."))
+        proposed_all: List[str] = []
+        for kind, fv in validators.items():
+            proposed_all.extend(f"{kind}:{ident}" for ident in fv.proposed_active_blocks())
+        if proposed_all:
+            shown = ", ".join(proposed_all[:10]) + (" …" if len(proposed_all) > 10 else "")
+            all_findings.append(Finding("WARNING", "APR002", "-", 0, f"Tài liệu APPROVED nhưng còn mục Status Proposed: {shown}."))
+        open_questions_all: List[str] = []
+        for kind, fv in validators.items():
+            open_questions_all.extend(fv.open_questions)
+        if open_questions_all:
+            all_findings.append(Finding("WARNING", "APR003", "-", 0,
+                                         f"Tài liệu APPROVED nhưng còn câu hỏi Open (bất kỳ mức P0/P1/P2): {', '.join(open_questions_all)}."))
+
+    info: Dict[str, object] = {"validators": validators, "global_defs": global_defs, "partial": partial}
+    return all_findings, info
+
+
+def build_info_findings(info: Dict[str, object]) -> List[Finding]:
+    validators: Dict[str, FileValidator] = info["validators"]  # type: ignore[assignment]
+    global_defs: Dict[str, List[DefRecord]] = info["global_defs"]  # type: ignore[assignment]
+    findings: List[Finding] = []
+    if info.get("partial"):
+        findings.append(Finding("INFO", "INF000", "-", 0, "Chế độ --partial: bỏ kiểm tra đủ section; tham chiếu treo chỉ là WARNING."))
+    counts: Dict[str, int] = {}
+    for ident in global_defs:
+        prefix = ident.split("-")[0]
+        counts[prefix] = counts.get(prefix, 0) + 1
+    order = ["GOAL", "FR", "BR", "DR", "IR", "UIR", "NFR", "US", "UC", "AC", "DIA", "ASM", "Q", "RISK", "DEC", "SRC", "UXP", "CR"]
+    summary = ", ".join(f"{p}={counts[p]}" for p in order if p in counts) or "không có"
+    findings.append(Finding("INFO", "INF001", "-", 0, f"Số ID đã định nghĩa (toàn dự án): {summary}."))
+    q_counts: Dict[str, int] = {}
+    tbd_total = 0
+    for fv in validators.values():
+        for k, v in fv.q_counts.items():
+            q_counts[k] = q_counts.get(k, 0) + v
+        tbd_total += sum(1 for f in fv.findings if f.code == "PH001")
+    if q_counts:
+        q = ", ".join(f"{k}={v}" for k, v in sorted(q_counts.items()))
+        findings.append(Finding("INFO", "INF002", "-", 0, f"Câu hỏi theo Priority/Status: {q}."))
+    findings.append(Finding("INFO", "INF003", "-", 0, f"Số dòng còn TBD/TODO (toàn dự án): {tbd_total}."))
+    coverage_all: Dict[str, int] = {}
+    for fv in validators.values():
+        for k, v in fv.coverage_counts.items():
+            coverage_all[k] = coverage_all.get(k, 0) + v
+    if coverage_all:
+        c = ", ".join(f"{k}={v}" for k, v in sorted(coverage_all.items()))
+        findings.append(Finding("INFO", "INF004", "-", 0, f"Elicitation coverage: {c}."))
+    present = ", ".join(sorted(validators.keys())) or "không có"
+    findings.append(Finding("INFO", "INF005", "-", 0, f"File đã kiểm tra: {present}."))
+    return findings
+
+
+def read_file(path: str) -> str:
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    return raw.decode("utf-8-sig")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="validate_srs.py",
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("path", help="Đường dẫn file SRS Markdown cần kiểm tra")
-    parser.add_argument("--partial", action="store_true", help="Trích đoạn SRS: bỏ kiểm tra đủ section")
-    parser.add_argument("--ascii", action="store_true", help="In kết quả không dấu")
-    parser.add_argument("--version", action="version", version=f"validate_srs.py {TOOL_VERSION}")
-    args = parser.parse_args(argv)
-
-    out = to_ascii if args.ascii else (lambda s: s)
     if hasattr(sys.stdout, "reconfigure"):
         try:
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         except (ValueError, OSError):
             pass
 
-    try:
-        with open(args.path, "rb") as fh:
-            raw = fh.read()
-        text = raw.decode("utf-8-sig")
-    except FileNotFoundError:
-        print(out(f"ERROR IO001 L0: Không tìm thấy file: {args.path}"))
-        return 2
-    except IsADirectoryError:
-        print(out(f"ERROR IO001 L0: Đường dẫn là thư mục, không phải file: {args.path}"))
-        return 2
-    except PermissionError:
-        print(out(f"ERROR IO001 L0: Không có quyền đọc file: {args.path}"))
-        return 2
-    except UnicodeDecodeError:
-        print(out(f"ERROR IO001 L0: File không phải UTF-8: {args.path}"))
-        return 2
-    except OSError as exc:
-        print(out(f"ERROR IO001 L0: Không đọc được file {args.path}: {exc}"))
+    parser = argparse.ArgumentParser(
+        prog="validate_docs.py",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("--brd", help="Đường dẫn file BRD Markdown")
+    parser.add_argument("--srs", help="Đường dẫn file SRS Markdown")
+    parser.add_argument("--diagrams", help="Đường dẫn file sơ đồ Markdown")
+    parser.add_argument("--partial", action="store_true", help="Trích đoạn: bỏ kiểm tra đủ section")
+    parser.add_argument("--ascii", action="store_true", help="In kết quả không dấu")
+    parser.add_argument("--version", action="version", version=f"validate_docs.py {TOOL_VERSION}")
+    args = parser.parse_args(argv)
+
+    out = to_ascii if args.ascii else (lambda s: s)
+
+    requested = {"BRD": args.brd, "SRS": args.srs, "DIAGRAMS": args.diagrams}
+    if not any(requested.values()):
+        print(out("ERROR IO001 -: Phải cung cấp ít nhất một trong --brd / --srs / --diagrams."))
         return 2
 
-    findings = validate_text(text, partial=args.partial)
-    for f in sorted(findings, key=lambda f: (LEVEL_ORDER[f.level], f.line, f.code)):
+    sources: Dict[str, str] = {}
+    for kind, path in requested.items():
+        if path is None:
+            continue
+        try:
+            sources[kind] = read_file(path)
+        except FileNotFoundError:
+            print(out(f"ERROR IO001 {kind}: Không tìm thấy file: {path}"))
+            return 2
+        except IsADirectoryError:
+            print(out(f"ERROR IO001 {kind}: Đường dẫn là thư mục, không phải file: {path}"))
+            return 2
+        except PermissionError:
+            print(out(f"ERROR IO001 {kind}: Không có quyền đọc file: {path}"))
+            return 2
+        except UnicodeDecodeError:
+            print(out(f"ERROR IO001 {kind}: File không phải UTF-8: {path}"))
+            return 2
+        except OSError as exc:
+            print(out(f"ERROR IO001 {kind}: Không đọc được file {path}: {exc}"))
+            return 2
+
+    findings, info = validate_project(sources, partial=args.partial)
+    findings.extend(build_info_findings(info))
+    for f in sorted(findings, key=lambda f: (LEVEL_ORDER[f.level], f.file_tag, f.line, f.code)):
         print(out(f.render()))
     errors = sum(1 for f in findings if f.level == "ERROR")
     warnings = sum(1 for f in findings if f.level == "WARNING")
     infos = sum(1 for f in findings if f.level == "INFO")
-    print(out(f"Tổng kết: {errors} ERROR, {warnings} WARNING, {infos} INFO — {args.path}"))
+    print(out(f"Tổng kết: {errors} ERROR, {warnings} WARNING, {infos} INFO."))
     print(out(DISCLAIMER))
     return 1 if errors else 0
 

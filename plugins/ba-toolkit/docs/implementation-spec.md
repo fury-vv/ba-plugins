@@ -1,5 +1,7 @@
 # Implementation Spec — plugin `ba-toolkit` / skill `srs-analysis` v1.0.0
 
+> **Lịch sử.** Tài liệu này mô tả thiết kế gốc của skill ở v1.0.0 (một file SRS 30-section). Từ v2.0.0, skill xuất 3 file tách biệt (BRD/SRS/Diagrams) theo chuẩn SRS 6 phần — xem spec thiết kế tại `../../docs/superpowers/specs/2026-10-10-srs-skill-multi-doc-redesign-design.md` (trong repo `ba-plugins`) và `CHANGELOG.md` mục 2.0.0. Giữ nguyên tài liệu này làm lịch sử quyết định của v1.0.0, không chỉnh sửa lại theo cấu trúc mới.
+
 | Field | Value |
 |---|---|
 | Spec version | 1.0 |

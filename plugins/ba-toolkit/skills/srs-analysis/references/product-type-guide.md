@@ -61,7 +61,7 @@ Hỏi người dùng sản phẩm thuộc loại nào; một dự án có thể 
 - [P1] Thay đổi phiên bản API được thông báo và hỗ trợ song song thế nào?
 - [P2] Tài liệu cho bên gọi cần ở dạng nào?
 
-Nhánh D thường không có giao diện người dùng: §13 ghi `Not applicable — <lý do>`.
+Nhánh D thường không có giao diện người dùng: bảng Design Inputs (SRS §4) ghi `Not applicable — <lý do>`.
 
 ## 6. Nhánh E — Dữ liệu, báo cáo, dashboard
 
@@ -143,12 +143,12 @@ Hỏi nhóm A, C, I ở buổi đầu; các nhóm còn lại sau khi phạm vi �
 
 | Loại | Ví dụ dạng câu | Ghi ở đâu | Ràng buộc |
 |---|---|---|---|
-| Ràng buộc | "Phải dùng đúng màu và logo theo brand guideline <tên file, phiên bản>" | Khối `UIR-` trong §13, có AC hoặc Verification | Có |
-| Mong muốn | "Thích giao diện thoáng, ít màu" | Bảng Design Inputs §13, `UXP-`, Type `Preference` | Không; đầu vào cho thiết kế |
-| Tham chiếu | "Website X: thích cách bố trí bộ lọc" | Bảng Design Inputs §13, `UXP-`, Type `Reference`, ghi rõ điểm được thích | Không; chỉ lấy cảm hứng |
+| Ràng buộc | "Phải dùng đúng màu và logo theo brand guideline <tên file, phiên bản>" | Khối `UIR-` trong SRS §4, có AC hoặc Verification | Có |
+| Mong muốn | "Thích giao diện thoáng, ít màu" | Bảng Design Inputs (SRS §4), `UXP-`, Type `Preference` | Không; đầu vào cho thiết kế |
+| Tham chiếu | "Website X: thích cách bố trí bộ lọc" | Bảng Design Inputs (SRS §4), `UXP-`, Type `Reference`, ghi rõ điểm được thích | Không; chỉ lấy cảm hứng |
 
 - Ràng buộc cũng có thể có một dòng `UXP-` Type `Constraint` để liệt kê tài sản thương hiệu nhận được (file, phiên bản), nhưng nghĩa vụ ràng buộc phải nằm trong `UIR-`.
-- Mục tiêu khả năng tiếp cận và thiết bị cần hỗ trợ ghi trong §14 (NFR), target `TBD (Q-xxx)` nếu chưa có.
+- Mục tiêu khả năng tiếp cận và thiết bị cần hỗ trợ ghi trong SRS §4 (NFR), target `TBD (Q-xxx)` nếu chưa có.
 - Mỗi mã màu ghi kèm nguồn (`SRC-` của guideline). Validator kiểm tra định dạng mã màu và cột Source của `UXP-`.
 - Bảng Design Inputs là UX brief bàn giao cho giai đoạn thiết kế.
 

@@ -1,7 +1,7 @@
 # NFR Checklist — Yêu cầu phi chức năng
 
 **Mục đích:** danh mục thuộc tính chất lượng cần cân nhắc, câu hỏi tương ứng, và cách ghi khi chưa có chỉ tiêu.
-**Khi dùng:** Phase 1 (hỏi), Phase 3 (viết §14), Phase 4 (rà soát).
+**Khi dùng:** Phase 1 (hỏi), Phase 3 (viết SRS §4 Non-Functional Requirements), Phase 4 (rà soát).
 
 ## Mục lục
 
@@ -14,7 +14,7 @@
 
 - **Không tự đặt chỉ tiêu định lượng.** Mọi con số (thời gian phản hồi, độ sẵn sàng, thời gian khôi phục, số người dùng đồng thời…) phải đến từ khách hàng, hợp đồng, hoặc chính sách đã có nguồn. Chưa có thì ghi `TBD (Q-xxx)`.
 - Có thể **đề xuất** một chỉ tiêu để khách cân nhắc, nhưng requirement giữ `Proposed`, ghi rõ "Đề xuất, chờ xác nhận" trong `Notes`.
-- Cân nhắc mọi hạng mục; hạng mục không áp dụng ghi lý do trong coverage hoặc trong §14.
+- Cân nhắc mọi hạng mục; hạng mục không áp dụng ghi lý do trong Elicitation Coverage (SRS §6) hoặc trong SRS §4.
 - Mỗi NFR phải có `Target` (giá trị hoặc `TBD (Q-xxx)`) và `Verification`.
 
 ## 2. Cách ghi một NFR
@@ -57,4 +57,4 @@
 
 - Hỏi theo tình huống thay vì con số: "Nếu hệ thống ngừng 1 giờ vào giờ làm việc thì chuyện gì xảy ra?".
 - Hỏi về hệ thống hiện tại: "Hiện nay mất bao lâu? Có ai phàn nàn không?".
-- Nếu vẫn chưa có: ghi `TBD (Q-xxx)`, chỉ định vai trò sẽ trả lời, ghi rủi ro trong §23 nếu thiếu chỉ tiêu ảnh hưởng thiết kế.
+- Nếu vẫn chưa có: ghi `TBD (Q-xxx)`, chỉ định vai trò sẽ trả lời, ghi rủi ro trong Risks (BRD §9) nếu thiếu chỉ tiêu ảnh hưởng thiết kế.

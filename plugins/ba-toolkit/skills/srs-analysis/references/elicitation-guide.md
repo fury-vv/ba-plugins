@@ -1,7 +1,7 @@
 # Elicitation Guide — Hướng dẫn thu thập yêu cầu
 
 **Mục đích:** cách đặt câu hỏi và ngân hàng câu hỏi dùng chung cho mọi loại dự án.
-**Khi dùng:** Phase 0 và Phase 1; khi nhập ghi chú họp; khi bảng coverage còn dòng `TBD`.
+**Khi dùng:** Phase 0 và Phase 1; khi nhập ghi chú họp; khi bảng Elicitation Coverage (SRS §6) còn dòng `TBD`.
 
 Câu hỏi theo loại sản phẩm và về UI/UX nằm ở `product-type-guide.md`. Câu hỏi về thuộc tính chất lượng nằm ở `nfr-checklist.md`.
 
@@ -12,7 +12,7 @@ Câu hỏi theo loại sản phẩm và về UI/UX nằm ở `product-type-guide
 3. Xử lý mâu thuẫn, TBD và câu trả lời "chưa biết"
 4. Tài liệu nên xin
 5. Ngân hàng câu hỏi theo nhóm
-6. Bảng ánh xạ nhóm câu hỏi → section SRS
+6. Bảng ánh xạ nhóm câu hỏi → file/section
 
 ## 1. Cách hỏi
 
@@ -21,8 +21,8 @@ Câu hỏi theo loại sản phẩm và về UI/UX nằm ở `product-type-guide
 - Hỏi về **kết quả và tình huống**, không hỏi về giải pháp. Ví dụ: "Khi việc X bị trễ, ai cần biết và trong bao lâu?" thay vì "Có cần chức năng gửi thông báo không?".
 - Xin **ví dụ cụ thể** và **trường hợp ngoại lệ**: "Lần gần nhất việc này đi sai là khi nào? Chuyện gì đã xảy ra?".
 - Dùng **thuật ngữ của khách hàng**, ghi vào glossary; không thay bằng từ mình quen.
-- Chỉ hỏi nhóm áp dụng cho dự án. Nhóm không áp dụng thì ghi `Not applicable` kèm lý do trong coverage §27.
-- Mỗi câu đã hỏi được ghi vào §24 với ID `Q-`; khi có câu trả lời, ghi `Answered` và nguồn (`SRC-`).
+- Chỉ hỏi nhóm áp dụng cho dự án. Nhóm không áp dụng thì ghi `Not applicable` kèm lý do trong Elicitation Coverage (SRS §6).
+- Mỗi câu đã hỏi được ghi vào bảng Open Questions (SRS §6) với ID `Q-`; khi có câu trả lời, ghi `Answered` và nguồn (`SRC-`).
 
 ## 2. Phân loại P0/P1/P2
 
@@ -33,6 +33,8 @@ Câu hỏi theo loại sản phẩm và về UI/UX nằm ở `product-type-guide
 | P2 | Có thể xử lý sau nếu ghi nhận rủi ro | Báo cáo bổ sung, tùy chọn hiển thị, tối ưu sau phát hành |
 
 Mức trong ngân hàng câu hỏi bên dưới chỉ là gợi ý; điều chỉnh theo dự án.
+
+**P0/P1/P2 chỉ quyết định thứ tự hỏi, không quyết định có cần trả lời hay không.** Mọi câu đã hỏi — kể cả P2 — phải có câu trả lời thật (`Answered`) hoặc được chủ động chuyển `Deferred`/chấp nhận rủi ro (ghi `DEC-`) trước khi qua G1 hoặc trình G5; không được để `Open` âm thầm trôi qua chỉ vì mức thấp.
 
 ## 3. Xử lý mâu thuẫn, TBD và câu trả lời "chưa biết"
 
@@ -53,7 +55,7 @@ Xin trước, hỏi sau; tài liệu thường trả lời được nhiều câu
 - Brand guideline, logo, file thiết kế sẵn có (xem `product-type-guide.md`).
 - Hợp đồng hoặc phụ lục kỹ thuật nếu có điều khoản về chất lượng, bảo mật, dữ liệu.
 
-Mỗi tài liệu nhận được ghi thành một dòng `SRC-` trong §26.
+Mỗi tài liệu nhận được ghi thành một dòng `SRC-` trong bảng Sources (SRS §6).
 
 ## 5. Ngân hàng câu hỏi theo nhóm
 
@@ -175,27 +177,27 @@ Skill **không khẳng định** luật nào áp dụng. Ghi câu trả lời l�
 - [P1] Ai thực hiện nghiệm thu (UAT), trên môi trường nào, tiêu chí ký nhận là gì?
 - [P2] Ai đào tạo người dùng? Ai hỗ trợ sau khi đưa vào sử dụng, trong giờ nào?
 
-## 6. Bảng ánh xạ nhóm câu hỏi → section SRS
+## 6. Bảng ánh xạ nhóm câu hỏi → file/section
 
-| Nhóm | Section |
+| Nhóm | File, section |
 |---|---|
-| 5.1 | §2, §3 |
-| 5.2 | §5, §29 |
-| 5.3 | §5 |
-| 5.4 | §4, §7 |
-| 5.5, 5.6 | §8, §9 |
-| 5.7 | §10 |
-| 5.8 | §17 |
-| 5.9 | §11, §19 |
-| 5.10 | §16 |
-| 5.11 | §11, §16 |
-| 5.12 | §9, §14 |
-| 5.13 | §12, §18 |
-| 5.14 | §18 |
-| 5.15 | §19 |
-| 5.16 | §9, §11 |
-| 5.17 | §7, §19 |
-| 5.18 | §20 |
-| `product-type-guide.md` | §13 và các section liên quan |
-| `nfr-checklist.md` | §14 |
-| `domain-discovery-guide.md` | §6, §22 |
+| 5.1 | BRD §2 (Business Context), BRD §3 (Goals) |
+| 5.2 | BRD §5 (Stakeholders), SRS §6 (Approval Record) |
+| 5.3 | BRD §5 (Stakeholders) |
+| 5.4 | BRD §4 (Scope), BRD §7 (Assumptions) |
+| 5.5, 5.6 | BRD §8 (High-Level Business Processes), SRS §3 (Use case, FR) |
+| 5.7 | SRS §6 (Business Rules) |
+| 5.8 | SRS §6 (Workflow chi tiết / vòng đời) |
+| 5.9 | SRS §6 (Dữ liệu), SRS §5 (Security) |
+| 5.10 | SRS §5 (Security Requirements) |
+| 5.11 | SRS §6 (Dữ liệu), SRS §5 (Security) |
+| 5.12 | SRS §3 (FR), SRS §4 (NFR) |
+| 5.13 | SRS §6 (Tích hợp), SRS §3 (FR) |
+| 5.14 | SRS §3 (FR) |
+| 5.15 | SRS §5 (Security), SRS §4 (NFR) |
+| 5.16 | SRS §3 (FR), SRS §6 (Dữ liệu) |
+| 5.17 | BRD §7 (Assumptions/Constraints), SRS §5 (Security) |
+| 5.18 | SRS §6 (Phụ lục — vận hành) |
+| `product-type-guide.md` | SRS §4 (Non-Functional Requirements) |
+| `nfr-checklist.md` | SRS §4 (Non-Functional Requirements) |
+| `domain-discovery-guide.md` | BRD §6 (Glossary), BRD §2 (Business Context) |

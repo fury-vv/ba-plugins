@@ -1,7 +1,7 @@
 # Diagram Standard — Sơ đồ phân tích bằng Mermaid
 
 **Mục đích:** danh mục sơ đồ, điều kiện kích hoạt, quy ước viết Mermaid và quy tắc nhất quán với văn bản.
-**Khi dùng:** Phase 2 (dựng sơ đồ để xác nhận tại G2), Phase 3 (đưa vào §21), Phase 6 (cập nhật sau CR).
+**Khi dùng:** Phase 2 (dựng sơ đồ để xác nhận tại G2), Phase 3 (đưa vào `docs/diagrams/diagrams.md` §1), Phase 6 (cập nhật sau CR).
 
 ## Mục lục
 
@@ -26,18 +26,18 @@
 
 | Type | Khi nào cần | Loại Mermaid | Dựng từ |
 |---|---|---|---|
-| Context | Luôn luôn | `flowchart` | Actor (§5), IR (§12) |
-| Use case | Có từ 2 actor hoặc nhiều use case | `flowchart` | UC (§8), actor |
+| Context | Luôn luôn | `flowchart` | Actor (BRD §5), IR (SRS §6) |
+| Use case | Có từ 2 actor hoặc nhiều use case | `flowchart` | UC (SRS §3), actor |
 | Process | Có workflow nhiều bước hoặc nhiều vai trò | `flowchart` với `subgraph` làm làn | UC, FR |
-| State | Có thực thể mang trạng thái | `stateDiagram-v2` | Bảng §17, BR |
-| Data model | Có dữ liệu lưu trữ | `erDiagram` | Glossary (§6), DR (§11) |
+| State | Có thực thể mang trạng thái | `stateDiagram-v2` | Bảng workflow chi tiết (SRS §6), BR |
+| Data model | Có dữ liệu lưu trữ | `erDiagram` | Glossary (BRD §6), DR (SRS §6) |
 | Sequence | Có tích hợp với hệ thống ngoài | `sequenceDiagram` | IR, luồng lỗi |
-| Data flow | Có dữ liệu nhạy cảm hoặc tích hợp ngoài | `flowchart` với `subgraph` | DR, IR, §19 |
-| Rollout | Phát hành nhiều giai đoạn (tùy chọn) | `gantt` | §4, §20 |
+| Data flow | Có dữ liệu nhạy cảm hoặc tích hợp ngoài | `flowchart` với `subgraph` | DR, IR (SRS §6) |
+| Rollout | Phát hành nhiều giai đoạn (tùy chọn) | `gantt` | Scope (BRD §4), ghi chú vận hành (SRS §6) |
 
-Loại không áp dụng: không cần vẽ; ghi lý do trong §21 nếu dễ gây thắc mắc (ví dụ "Không có sơ đồ State vì không có thực thể mang trạng thái").
+Loại không áp dụng: không cần vẽ; ghi lý do trong `diagrams.md` nếu dễ gây thắc mắc (ví dụ "Không có sơ đồ State vì không có thực thể mang trạng thái").
 
-## 3. Khối sơ đồ trong SRS
+## 3. Khối sơ đồ trong diagrams.md
 
 ````markdown
 ### DIA-002 — Vòng đời <đối tượng>
@@ -120,16 +120,16 @@ sequenceDiagram
 Validator kiểm tra tự động:
 - Khối `DIA-` có khối `mermaid`, có `Source`.
 - Loại Mermaid nằm trong danh sách cho phép.
-- Mọi ID xuất hiện trong sơ đồ đã được định nghĩa trong SRS.
-- §21 có ít nhất một sơ đồ `Type: Context`.
+- Mọi ID xuất hiện trong sơ đồ đã được định nghĩa ở một trong 3 file (BRD/SRS/Diagrams).
+- `diagrams.md` có ít nhất một sơ đồ `Type: Context`.
 
 Rà soát thủ công:
-- Mỗi trạng thái và chuyển trạng thái trên sơ đồ State khớp bảng §17.
-- Mỗi actor trên Context diagram có trong §5; mỗi hệ thống ngoài có `IR-`.
+- Mỗi trạng thái và chuyển trạng thái trên sơ đồ State khớp bảng workflow chi tiết (SRS §6).
+- Mỗi actor trên Context diagram có trong Stakeholders (BRD §5); mỗi hệ thống ngoài có `IR-` (SRS §6).
 - Không có phần tử trên sơ đồ mà văn bản không nhắc tới.
 
 ## 7. Giới hạn của v1
 
 - Validator không kiểm tra cú pháp Mermaid. Kiểm tra bằng cách xem bản hiển thị (ví dụ trên nền tảng hỗ trợ Mermaid) hoặc dùng công cụ render ở giai đoạn sau.
 - Các loại sơ đồ mới của Mermaid (Use Case, Swimlanes, Requirement Diagram) chưa dùng trong v1 vì nhiều trình hiển thị chưa hỗ trợ.
-- `erDiagram` được tài liệu Mermaid ghi là experimental; kiểm tra hiển thị trên nơi người dùng xem SRS.
+- `erDiagram` được tài liệu Mermaid ghi là experimental; kiểm tra hiển thị trên nơi người dùng xem `diagrams.md`.

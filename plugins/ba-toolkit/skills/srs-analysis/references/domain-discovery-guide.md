@@ -1,7 +1,7 @@
 # Domain Discovery Guide — Khám phá lĩnh vực mà không giả định
 
 **Mục đích:** cách hiểu lĩnh vực của khách hàng từ chính thông tin họ cung cấp, cách xác nhận domain, cách tách nội dung đặc thù lĩnh vực, và cách dùng domain pack an toàn.
-**Khi dùng:** Phase 0–2; khi cần điền §6 (Glossary) hoặc §22 (Domain-Specific Considerations); khi người dùng cung cấp domain pack.
+**Khi dùng:** Phase 0–2; khi cần điền Glossary (BRD §6) hoặc nội dung đặc thù lĩnh vực (BRD §2 Business Context); khi người dùng cung cấp domain pack.
 
 ## Mục lục
 
@@ -26,22 +26,22 @@
 2. Với mỗi thuật ngữ: ghi đúng cách khách viết, nguồn (`SRC-`), nghĩa theo cách khách giải thích. Chưa có giải thích thì tạo `Q-` hỏi nghĩa.
 3. Gom thành **sơ đồ thực thể khái niệm**: thực thể nào liên quan thực thể nào, quan hệ một-nhiều hay nhiều-nhiều. Quan hệ chưa rõ ghi `Q-`.
 4. Kiểm tra từ đồng nghĩa và từ dễ hiểu nhầm: hai từ có cùng nghĩa không? Một từ có hai nghĩa ở hai bộ phận không?
-5. Đưa vào §6 Glossary; thực thể và quan hệ vào §11 và sơ đồ dữ liệu khái niệm (`diagram-standard.md`).
+5. Đưa vào Glossary (BRD §6); thực thể và quan hệ vào Dữ liệu (SRS §6) và sơ đồ dữ liệu khái niệm (`diagram-standard.md`, trong `diagrams.md`).
 
 ## 3. Xác nhận domain
 
 - Hỏi trực tiếp ở Phase 0 khi chưa rõ: "Hệ thống phục vụ hoạt động nào của tổ chức? Người dùng cuối là ai?".
-- Chỉ khi người dùng xác nhận, đổi trường `Domain` trong §1 từ `Not confirmed` thành `Confirmed: <tên lĩnh vực theo cách người dùng gọi>`, ghi `DEC-` hoặc `SRC-` cho xác nhận đó.
-- Trước khi domain được xác nhận, §22 phải là `Not applicable — domain chưa được xác nhận`. Validator cảnh báo nếu §22 có nội dung trong khi domain chưa xác nhận.
+- Chỉ khi người dùng xác nhận, đổi trường `Domain` trong Document Control (phần mở đầu, cả 3 file) từ `Not confirmed` thành `Confirmed: <tên lĩnh vực theo cách người dùng gọi>`, ghi `DEC-` hoặc `SRC-` cho xác nhận đó.
+- Trước khi domain được xác nhận, không đưa nội dung đặc thù lĩnh vực vào BRD §2 (Business Context) hay bất kỳ requirement nào — phần còn thiếu ghi `Q-`.
 
 ## 4. Tách yêu cầu chung và yêu cầu đặc thù lĩnh vực
 
 | Loại | Ghi ở đâu |
 |---|---|
-| Yêu cầu không phụ thuộc lĩnh vực (đăng nhập, phân quyền, tìm kiếm, xuất dữ liệu…) | Các section chung §9–§20 |
-| Yêu cầu chỉ có ý nghĩa trong lĩnh vực đã xác nhận (quy định ngành, chuẩn nghiệp vụ, thuật ngữ chuyên môn có ràng buộc) | §22, và requirement tương ứng tham chiếu tới mục đó |
+| Yêu cầu không phụ thuộc lĩnh vực (đăng nhập, phân quyền, tìm kiếm, xuất dữ liệu…) | Các section chung ở SRS §3–§6 |
+| Yêu cầu chỉ có ý nghĩa trong lĩnh vực đã xác nhận (quy định ngành, chuẩn nghiệp vụ, thuật ngữ chuyên môn có ràng buộc) | BRD §2 (Business Context), và requirement tương ứng ở SRS tham chiếu tới đoạn đó |
 
-Mỗi mục trong §22 ghi: nội dung, nguồn, mức chắc chắn, và ai cần xác minh.
+Mỗi mục đặc thù lĩnh vực trong BRD §2 ghi: nội dung, nguồn, mức chắc chắn, và ai cần xác minh.
 
 ## 5. Nội dung cần chuyên gia xác minh
 
@@ -79,7 +79,7 @@ Domain pack là file Markdown chứa tri thức lĩnh vực **đã khái quát h
 2. Pack `Draft` (chưa duyệt): báo người dùng trước khi dùng.
 3. Nội dung pack chỉ được dùng để **sinh câu hỏi và giả thuyết**. Mỗi gợi ý đưa vào SRS dưới dạng `Q-` hoặc `ASM-`, ghi "Theo domain pack <tên, version>, cần khách xác nhận".
 4. Không chép nội dung pack thành requirement. Requirement chỉ được tạo khi khách hàng xác nhận, với nguồn là khách hàng.
-5. Ghi pack đã dùng vào §26 với Type `Document`.
+5. Ghi pack đã dùng vào bảng Sources (SRS §6) với Type `Document`.
 
 ### Không được có trong domain pack
 
