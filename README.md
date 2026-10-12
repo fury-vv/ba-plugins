@@ -5,8 +5,11 @@ Marketplace này phân phối các plugin hỗ trợ Business Analyst.
 | Plugin | Version | Nội dung |
 |---|---|---|
 | `ba-toolkit` | 1.0.0 (pilot) | Skill `srs-analysis`: thu thập yêu cầu domain-neutral, soạn SRS có ID ổn định, acceptance criteria, sơ đồ Mermaid, traceability, validator và cổng phê duyệt |
+| `lasa-website-ba` | 1.0.0 | Skill `lasa-website-ba-layout`: phỏng vấn khách làm website LASA (theme có sẵn hoặc thiết kế riêng), sitemap & page inventory, đặc tả layout, SRS/RTM bàn giao cho designer, developer, tester, PM |
 
-Chi tiết plugin: `plugins/ba-toolkit/README.md`.
+Chi tiết plugin: `plugins/ba-toolkit/README.md`, `plugins/lasa-website-ba/README.md`.
+
+Cài `lasa-website-ba`: `claude plugin install lasa-website-ba@ba-plugins`, dùng `/lasa-website-ba:lasa-website-ba-layout bắt đầu BA`. Kiểm thử: `python plugins/lasa-website-ba/tests/run_tests.py`.
 
 ## Dành cho người dùng
 

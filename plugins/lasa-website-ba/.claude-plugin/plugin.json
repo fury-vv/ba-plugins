@@ -1,0 +1,19 @@
+{
+  "name": "lasa-website-ba",
+  "displayName": "LASA Website BA",
+  "version": "1.0.0",
+  "description": "Skill lasa-website-ba-layout: hỗ trợ BA phỏng vấn khách hàng làm website LASA (theme có sẵn hoặc thiết kế riêng) theo quy trình 9 phase A→I, hỏi từng câu, thích ứng theo ngành, domain/hosting chỉ hỏi sau khi đã rõ phạm vi, cổng phê duyệt G1–G4 và xuất bộ bàn giao cho layout designer, developer, tester, PM (discovery brief, sitemap & page inventory, page spec, SRS, RTM, decision log) kèm lint script.",
+  "author": {
+    "name": "Viet",
+    "email": "vietvv@samset.net"
+  },
+  "keywords": [
+    "business-analysis",
+    "requirements",
+    "website",
+    "sitemap",
+    "layout",
+    "srs",
+    "lasa"
+  ]
+}

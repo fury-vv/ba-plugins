@@ -10,6 +10,11 @@
       "name": "ba-toolkit",
       "source": "./plugins/ba-toolkit",
       "description": "Skill srs-analysis: thu thập yêu cầu domain-neutral và soạn BRD/SRS/Diagrams có cổng phê duyệt"
+    },
+    {
+      "name": "lasa-website-ba",
+      "source": "./plugins/lasa-website-ba",
+      "description": "Skill lasa-website-ba-layout: phỏng vấn khách làm website LASA (theme/custom), sitemap & đặc tả layout, SRS bàn giao cho designer/dev/tester"
     }
   ]
 }
